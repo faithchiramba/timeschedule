@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Web Popup Notification</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <h1>Web Popup Notification Example</h1>
+  <form id="working-time-form">
+    <label for="working-time">Working Time (in minutes):</label>
+    <input type="number" id="working-time" required>
+    <br>
+    <label for="break-time">Break Time (in minutes):</label>
+    <input type="number" id="break-time" required>
+    <br>
+    <button type="submit">Set Times</button>
+  </form>
+
+  <button id="start-notifications" disabled>Start Notifications</button>
+
+  <script>
+    const socket = io();
+
+    const workingTimeForm = document.getElementById('working-time-form');
+    const startNotificationsBtn = document.getElementById('start-notifications');
+
+    workingTimeForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const workingTime = parseInt(document.getElementById('working-time').value);
+      const breakTime = parseInt(document.getElementById('break-time').value);
+      if (workingTime > 0 && breakTime > 0) {
+        startNotificationsBtn.disabled = false;
+        setTimes(workingTime, breakTime);
+      }
+    });
+
+    startNotificationsBtn.addEventListener('click', () => {
+      startNotifications();
+    });
+
+    function setTimes(workingTime, breakTime) {
+      const workingTimeInSeconds = workingTime * 60;
+      const breakTimeInSeconds = breakTime * 60;
+      $.ajax({
+        type: 'POST',
+        url: '/set-times',
+        data: { workingTime: workingTimeInSeconds, breakTime: breakTimeInSeconds },
+        success: (response) => {
+          console.log(response);
+        },
+        error: (error) => {
+          console.error(error);
+        }
+      });
+    }
+
+    function startNotifications() {
+      $.ajax({
+        type: 'POST',
+        url: '/start-notifications',
+        success: (response) => {
+          console.log(response);
+        },
+        error: (error) => {
+          console.error(error);
+        }
+      });
+    }
+
+    // Listen for 'notification' events
+    socket.on('notification', (data) => {
+      // Display the notification as a web popup
+      alert(data.message);
+    });
+  </script>
+</body>
+</html>
